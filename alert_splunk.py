@@ -11,10 +11,8 @@ from email.mime.text import MIMEText
 from datetime import datetime, timedelta
 
 
-def send_email(body, nbr):
+def send_email(from_address, to_address, body, nbr):
     msg = MIMEText("<html><head></head><body>" + str(body) + "</body></html>", 'html')
-    from_address = "alert@treussart.com"
-    to_address = "matthieu@treussart.com"
     msg['Subject'] = '%s Alerts from SIEM' % nbr
     msg['From'] = from_address
     msg['To'] = to_address
@@ -34,7 +32,7 @@ def get_alerts(query, hours):
     return json.loads(subprocess.getoutput(shell))
 
 
-def alert_splunk(time_period, severity):
+def alert_splunk(from_address, to_address, time_period, severity):
     """Main function."""
     suricata_query = "index=suricata event_type=alert"
     ossec_query = "index=ossec"
@@ -55,7 +53,7 @@ def alert_splunk(time_period, severity):
             list_alerts = list_alerts + "<h4>" + str(alert_raw['rule']['comment']) + \
                           "</h4>" + "<pre>" + alert['_raw'] + "</pre><br/>"
     if list_alerts:
-        send_email(list_alerts, nbr)
+        send_email(from_address, to_address, list_alerts, nbr)
 
 
 if __name__ == "__main__":
@@ -69,7 +67,15 @@ if __name__ == "__main__":
                         help="the level severity to consider",
                         type=int,
                         default=6)
+    parser.add_argument("--from_address",
+                        help="The address who send the email",
+                        default="alert@treussart.com")
+    parser.add_argument("--to_address",
+                        help="The address who receive the email",
+                        default="matthieu@treussart.com")
     args = parser.parse_args()
     time_period = args.time_period
     severity = args.severity
-    alert_splunk(time_period, severity)
+    from_address = args.from_address
+    to_address = args.to_address
+    alert_splunk(from_address, to_address, time_period, severity)
